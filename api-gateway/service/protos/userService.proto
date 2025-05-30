@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package service;
+
+option go_package="./;protos";
+
+import "api-gateway/service/protos/userModels.proto";
+
+message UserRequest{
+    string UserName =1;
+    string PassWord =2;
+    string PassWordConfirm =3;
+}
+
+message UserDetailResponse{
+    UserModel UserDetail = 1;
+    uint32 Code =2;
+}
+
+service UserService{
+    rpc UserLogin(UserRequest) returns (UserDetailResponse);
+    rpc UserRegister(UserRequest) returns(UserDetailResponse);
+
+}
+
+// protoc --proto_path=. --proto_out=. --go_out=. userModels.proto

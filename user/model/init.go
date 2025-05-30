@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm/schema"
 )
 
-var _db *gorm.DB
+var DB *gorm.DB
 
 func Database(path string) {
 	var ormLogger logger.Interface
@@ -39,12 +39,12 @@ func Database(path string) {
 	sqlDB, _ := db.DB()
 	sqlDB.SetMaxOpenConns(20)
 	sqlDB.SetConnMaxLifetime(time.Second * 30)
-	_db = db
+	DB = db
 
 	migration()
 }
 
 func NewDBClient(ctx context.Context) *gorm.DB {
-	db := _db
+	db := DB
 	return db.WithContext(ctx)
 }
