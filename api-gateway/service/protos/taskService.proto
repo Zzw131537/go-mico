@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package service;
 
-import "taskModel.proto";
+import "api-gateway/service/protos/taskModel.proto";
 
 option go_package = "./;protos";
 

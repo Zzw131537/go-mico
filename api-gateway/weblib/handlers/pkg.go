@@ -14,3 +14,12 @@ func PanicIfUserError(err error) {
 		panic(err)
 	}
 }
+
+// 包装错误
+func PanicIfTaskError(err error) {
+	if err != nil {
+		err = errors.New("taskService--" + err.Error())
+		logger.Info(err)
+		panic(err)
+	}
+}

@@ -9,7 +9,8 @@ func InitMiddlewares(service []interface{}) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		// 将实例存在 gin.Key中
 		ctx.Keys = make(map[string]any)
-		ctx.Keys["userServices"] = service[0]
+		ctx.Keys["userService"] = service[0]
+		ctx.Keys["taskService"] = service[1]
 		ctx.Next()
 	}
 }

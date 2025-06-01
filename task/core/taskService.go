@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"task/model"
 	"task/service"
 
@@ -38,7 +39,7 @@ func (*TaskService) CreateTask(ctx context.Context, req *service.TaskRequest, re
 }
 
 // 获取备忘录列表
-func (*TaskService) GetTaskList(ctx context.Context, req *service.TaskRequest, resp *service.TaskListResponse) error {
+func (*TaskService) GetTasksList(ctx context.Context, req *service.TaskRequest, resp *service.TaskListResponse) error {
 	if req.Limit == 0 {
 		req.Limit = 10
 	}
@@ -64,3 +65,51 @@ func (*TaskService) GetTaskList(ctx context.Context, req *service.TaskRequest, r
 }
 
 // 获取备忘录详细信息
+func (*TaskService) GetTask(ctx context.Context, req *service.TaskRequest, resp *service.TaskDetailResponse) error {
+	taskData := model.Task{}
+
+	err := model.DB.Model(&model.Task{}).Where("id = ?", req.Id).First(&taskData).Error
+	if err != nil {
+		fmt.Println("查询数据库错误!")
+		return err
+	}
+	taskRes := BuildTask(&taskData)
+	resp.TaskDetail = taskRes
+	return nil
+}
+
+// 修改信息
+func (*TaskService) UpdateTask(ctx context.Context, req *service.TaskRequest, resp *service.TaskDetailResponse) error {
+	taskModel := model.Task{}
+
+	err := model.DB.Model(&model.Task{}).Where("id = ? and uid = ?", req.Id, req.Uid).First(&taskModel).Error
+
+	if err != nil {
+		fmt.Println(" 修改数据库错误")
+		return err
+	}
+
+	taskModel.Title = req.Title
+	taskModel.Content = req.Content
+	taskModel.Status = req.Status
+
+	err = model.DB.Model(&model.Task{}).Save(taskModel).Error
+	if err != nil {
+		return errors.New("保存数据错误")
+	}
+	return nil
+}
+
+// 删除备忘录
+func (*TaskService) DeleteTask(ctx context.Context, req *service.TaskRequest, resp *service.TaskDetailResponse) error {
+	taskModel := model.Task{}
+
+	err := model.DB.Model(&model.Task{}).Where("id = ? and uid = ?", req.Id, req.Uid).First(&taskModel).Delete(taskModel, nil).Error
+
+	if err != nil {
+		fmt.Println(" 输出数据库错误")
+		return err
+	}
+
+	return nil
+}

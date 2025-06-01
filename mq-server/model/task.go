@@ -7,7 +7,7 @@ type Task struct {
 
 	Uid       uint   `gorm:"not null"`
 	Title     string `gorm:"not null"`
-	Status    int64  `gorm:"default:'0'"`
+	Status    int64
 	Content   string `gorm:"type:longtext"`
 	StartTime int64
 	EndTime   int64

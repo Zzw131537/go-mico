@@ -16,7 +16,7 @@ func UserRegister(ctx *gin.Context) {
 	PanicIfUserError(ctx.Bind(&userReq))
 
 	// 从 gin.Key中取出服务实例
-	userService := ctx.Keys["userServices"].(service.UserService)
+	userService := ctx.Keys["userService"].(service.UserService)
 
 	userResp, err := userService.UserRegister(context.Background(), &userReq)
 
@@ -42,7 +42,12 @@ func UserLogin(ctx *gin.Context) {
 	userResp, err := userService.UserLogin(context.Background(), &userReq)
 	PanicIfUserError(err)
 
+	fmt.Println(userResp.UserDetail.ID)
+
 	token, err := utils.GenerateToken(uint(userResp.UserDetail.ID))
+
+	fmt.Println("登录token为:", token)
+
 	ctx.JSON(200, gin.H{
 		"code": 200,
 		"msg":  "success",

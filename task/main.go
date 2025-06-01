@@ -4,6 +4,8 @@
 package main
 
 import (
+	"fmt"
+	"task/config"
 	"task/core"
 	"task/service"
 
@@ -13,7 +15,9 @@ import (
 )
 
 func main() {
+	config.Init()
 
+	fmt.Println("初始化完成")
 	// etcd 注册件
 	etcReg := etcd.NewRegistry(
 		registry.Addrs("127.0.0.1:2379"),
