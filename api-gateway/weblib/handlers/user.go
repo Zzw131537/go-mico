@@ -5,56 +5,44 @@ import (
 	"api-gateway/service"
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/micro/go-micro/v2/logger"
 )
 
 func UserRegister(ctx *gin.Context) {
 	var userReq service.UserRequest
-
 	PanicIfUserError(ctx.Bind(&userReq))
 
-	// 从 gin.Key中取出服务实例
 	userService := ctx.Keys["userService"].(service.UserService)
 
 	userResp, err := userService.UserRegister(context.Background(), &userReq)
 
-	fmt.Println(userResp)
 	PanicIfUserError(err)
-	ctx.JSON(200, gin.H{
+
+	ctx.JSON(http.StatusOK, gin.H{
 		"data": userResp,
 	})
 
 }
 
-// 用户登录
 func UserLogin(ctx *gin.Context) {
 	var userReq service.UserRequest
+	PanicIfUserError(ctx.Bind(&userReq))
 
-	if err := ctx.Bind(&userReq); err != nil {
-		logger.Info(err.Error())
-	}
-
-	// 从 gin.Key中取出服务实例
 	userService := ctx.Keys["userService"].(service.UserService)
 
 	userResp, err := userService.UserLogin(context.Background(), &userReq)
+
 	PanicIfUserError(err)
 
-	fmt.Println(userResp.UserDetail.ID)
-
+	fmt.Println("用户Id为: " + string(userResp.UserDetail.ID))
 	token, err := utils.GenerateToken(uint(userResp.UserDetail.ID))
-
-	fmt.Println("登录token为:", token)
-
-	ctx.JSON(200, gin.H{
-		"code": 200,
-		"msg":  "success",
+	ctx.JSON(http.StatusOK, gin.H{
+		"code": userResp.Code,
 		"data": gin.H{
-			"user":  userResp.UserDetail,
+			"resp":  userResp.UserDetail,
 			"token": token,
 		},
 	})
-
 }

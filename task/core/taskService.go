@@ -9,33 +9,32 @@ import (
 	"task/service"
 
 	"github.com/streadway/amqp"
+	"gorm.io/gorm"
 )
 
-// 将信息放到消息队列中,生产者
-func (*TaskService) CreateTask(ctx context.Context, req *service.TaskRequest, resp *service.TaskDetailResponse) error {
-	// 进行连接
-	ch, err := model.MQ.Channel()
-	if err != nil {
-		err = errors.New("rabbitMQ channel err:" + err.Error())
-		return err
-	}
+// 消息通过MQ进行传递
 
+func (task *TaskService) CreateTask(ctx context.Context, req *service.TaskRequest, resp *service.TaskDetailResponse) error {
+	ch, err := model.MQ.Channel()
+
+	fmt.Println(req.Content, req.Title, req.Status)
+
+	if err != nil {
+		err = errors.New("rabbit Mq channel error: " + err.Error())
+	}
 	q, _ := ch.QueueDeclare("task_queue", true, false, false, false, nil)
 
-	body, _ := json.Marshal(req)
-
-	// 发布到队列中
+	body, _ := json.Marshal(req) // 请求序列化
 	err = ch.Publish("", q.Name, false, false, amqp.Publishing{
-		DeliveryMode: amqp.Persistent,
 		ContentType:  "application/json",
+		DeliveryMode: amqp.Persistent,
 		Body:         body,
 	})
-
 	if err != nil {
-		err = errors.New("rabbitMQ channel err:" + err.Error())
-		return err
+		err = errors.New("rabbit Mq channel error: " + err.Error())
 	}
 	return nil
+
 }
 
 // 获取备忘录列表
@@ -79,24 +78,39 @@ func (*TaskService) GetTask(ctx context.Context, req *service.TaskRequest, resp 
 }
 
 // 修改信息
+// 修改信息
 func (*TaskService) UpdateTask(ctx context.Context, req *service.TaskRequest, resp *service.TaskDetailResponse) error {
 	taskModel := model.Task{}
 
-	err := model.DB.Model(&model.Task{}).Where("id = ? and uid = ?", req.Id, req.Uid).First(&taskModel).Error
+	fmt.Printf("=== 更新任务调试 ===\n")
+	fmt.Printf("请求参数: ID=%d, UID=%d, Title=%s, Content=%s, Status=%d\n",
+		req.Id, req.Uid, req.Title, req.Content, req.Status)
 
+	// 1. 先查找任务
+	err := model.DB.Where("id = ? and uid = ?", req.Id, req.Uid).First(&taskModel).Error
 	if err != nil {
-		fmt.Println(" 修改数据库错误")
+		fmt.Printf("查找任务失败: ID=%d, UID=%d, 错误: %v\n", req.Id, req.Uid, err)
 		return err
 	}
 
+	fmt.Printf("找到任务: ID=%d, 原标题=%s\n", taskModel.ID, taskModel.Title)
+
+	// 2. 更新字段
 	taskModel.Title = req.Title
 	taskModel.Content = req.Content
 	taskModel.Status = req.Status
 
-	err = model.DB.Model(&model.Task{}).Save(taskModel).Error
+	fmt.Printf("更新后任务: Title=%s, Content=%s, Status=%d\n",
+		taskModel.Title, taskModel.Content, taskModel.Status)
+
+	// 3. 保存 - 关键：传递指针 &
+	err = model.DB.Save(&taskModel).Error
 	if err != nil {
-		return errors.New("保存数据错误")
+		fmt.Printf("保存失败: %v\n", err)
+		return errors.New("保存数据错误: " + err.Error())
 	}
+
+	fmt.Println("更新成功")
 	return nil
 }
 
@@ -104,12 +118,34 @@ func (*TaskService) UpdateTask(ctx context.Context, req *service.TaskRequest, re
 func (*TaskService) DeleteTask(ctx context.Context, req *service.TaskRequest, resp *service.TaskDetailResponse) error {
 	taskModel := model.Task{}
 
-	err := model.DB.Model(&model.Task{}).Where("id = ? and uid = ?", req.Id, req.Uid).First(&taskModel).Delete(taskModel, nil).Error
+	fmt.Printf("=== 删除任务调试 ===\n")
+	fmt.Printf("请求参数: ID=%d, UID=%d\n", req.Id, req.Uid)
 
+	// 1. 先查找任务是否存在
+	err := model.DB.Where("id = ? and uid = ?", req.Id, req.Uid).First(&taskModel).Error
 	if err != nil {
-		fmt.Println(" 输出数据库错误")
-		return err
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			fmt.Printf("任务不存在: ID=%d, UID=%d\n", req.Id, req.Uid)
+			return fmt.Errorf("任务不存在")
+		}
+		fmt.Printf("查找任务失败: %v\n", err)
+		return fmt.Errorf("数据库错误: %v", err)
 	}
 
+	fmt.Printf("找到要删除的任务: ID=%d, Title=%s\n", taskModel.ID, taskModel.Title)
+
+	// 2. 执行删除
+	result := model.DB.Delete(&taskModel)
+	if result.Error != nil {
+		fmt.Printf("删除失败: %v\n", result.Error)
+		return fmt.Errorf("删除失败: %v", result.Error)
+	}
+
+	if result.RowsAffected == 0 {
+		fmt.Println("没有记录被删除")
+		return fmt.Errorf("删除失败，记录不存在")
+	}
+
+	fmt.Printf("删除成功，影响行数: %d\n", result.RowsAffected)
 	return nil
 }

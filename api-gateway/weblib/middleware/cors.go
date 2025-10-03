@@ -1,7 +1,3 @@
-/*
- * @Author: Zhouzw
- * @LastEditTime: 2025-02-05 15:10:50
- */
 package middleware
 
 import (

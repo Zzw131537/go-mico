@@ -4,6 +4,7 @@ import (
 	"api-gateway/pkg/utils"
 	"api-gateway/service"
 	"context"
+	"fmt"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -79,16 +80,17 @@ func GetTask(ctx *gin.Context) {
 }
 func UpdateTask(ctx *gin.Context) {
 	var taskReq service.TaskRequest
+	fmt.Println("运行到这")
 	PanicIfTaskError(ctx.Bind(&taskReq))
 
 	taskService := ctx.Keys["taskService"].(service.TaskService)
-
+	fmt.Println("运行到这2")
 	claim, _ := utils.ParseToken(ctx.GetHeader("Authorization"))
 
 	taskReq.Uid = uint64(claim.Id)
 
-	id, _ := strconv.Atoi(ctx.Param("id")) // 获取 task_id
-	taskReq.Id = uint64(id)
+	// id, _ := strconv.Atoi(ctx.PostForm("id")) // 获取 task_id
+	// taskReq.Id = uint64(id)
 	// 调用服务端函数
 
 	taskResp, err := taskService.UpdateTask(context.Background(), &taskReq)
@@ -113,6 +115,7 @@ func DeleteTask(ctx *gin.Context) {
 
 	id, _ := strconv.Atoi(ctx.Param("id")) // 获取 task_id
 	taskReq.Id = uint64(id)
+	fmt.Println("taskReqId : ", taskReq.Id)
 	// 调用服务端函数
 
 	taskResp, err := taskService.DeleteTask(context.Background(), &taskReq)

@@ -1,6 +1,3 @@
-//go:build !js && !wasm
-// +build !js,!wasm
-
 package main
 
 import (
@@ -16,31 +13,36 @@ import (
 )
 
 func main() {
-	etcdReg := etcd.NewRegistry(
+
+	etcdRegi := etcd.NewRegistry(
 		registry.Addrs("127.0.0.1:2379"),
 	)
 
-	// 用户
+	// 注册用户服务
 	userMicroService := micro.NewService(
 		micro.Name("userService.client"),
 		micro.WrapClient(wrappers.NewUserWrapper),
 	)
 
-	taskMicroService := micro.NewService(
-		micro.Name("taskService.client"),
-		micro.WrapClient(wrappers.NewTaskWrapper),
-	)
+	// 用户服务调用实例
 	userService := service.NewUserService("rpcUserService", userMicroService.Client())
 
+	// task
+	taskMicroService := micro.NewService(
+		micro.Name("taskService.client"),
+		micro.WrapClient(wrappers.NewUserWrapper),
+	)
+
 	taskService := service.NewTaskService("rpcTaskService", taskMicroService.Client())
+
 	server := web.NewService(
 		web.Name("httpService"),
 		web.Address("127.0.0.1:4000"),
-		web.Handler(weblib.NewRoute(userService, taskService)),
-		web.Registry(etcdReg),
+		web.Handler(weblib.NewRouter(userService, taskService)),
+		web.Registry(etcdRegi),
 		web.RegisterTTL(time.Second*30),
 		web.RegisterInterval(time.Second*15),
-		web.Metadata(map[string]string{"protocol": "http"}),
+		web.Metadata(map[string]string{"protocel": "http"}),
 	)
 
 	_ = server.Init()

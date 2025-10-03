@@ -6,7 +6,7 @@ import (
 	"github.com/streadway/amqp"
 )
 
-var MQ *amqp.Connection
+var MQ *amqp.Connection // rabbitMQ 连接单例
 
 func RabbitMQ(connString string) {
 	conn, err := amqp.Dial(connString)

@@ -4,7 +4,7 @@ package service;
 
 option go_package="./;protos";
 
-import "userModels.proto";
+import "user/service/protos/userModels.proto";
 
 message UserRequest{
     string UserName =1;

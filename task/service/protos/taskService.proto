@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package service;
 
-import "taskModel.proto";
+import "task/service/protos/taskModel.proto";
 
 option go_package = "./;protos";
 
@@ -33,4 +33,4 @@ service TaskService{
     rpc GetTask(TaskRequest) returns (TaskDetailResponse);
     rpc UpdateTask(TaskRequest) returns (TaskDetailResponse);
     rpc DeleteTask(TaskRequest) returns (TaskDetailResponse);
-}
+}// protoc --proto_path=. --micro_out=. --go_out=. taskModel.proto
